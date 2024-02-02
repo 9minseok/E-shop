@@ -5,8 +5,11 @@ import { toast } from "react-hot-toast";
 type CartContextType = {
   cartTotalQty: number;
   cartProducts: CartProductType[] | null;
-  handleAddProductToCart: (product: CartProductType) => void
-  handleRemoveProductFromCart: (product: CartProductType) => void
+  handleAddProductToCart: (product: CartProductType) => void;
+  handleRemoveProductFromCart: (product: CartProductType) => void;
+  handleCartQtyIncrease: (product: CartProductType) => void;
+  handleCartQtyDecrease: (product: CartProductType) => void;
+  handleClearCart: () => void;
 };
 
 export const CartContext = createContext<CartContextType | null>(null);
@@ -24,7 +27,7 @@ export const CartContextProvider = (props: Props) => {
     const cProducts: CartProductType[] | null = JSON.parse(cartItems)
 
     setCartProducts(cProducts)
-  }, [])
+  }, []);
 
   const handleAddProductToCart = useCallback((product: CartProductType) => {
     setCartProducts((prev) => {
@@ -52,6 +55,59 @@ export const CartContextProvider = (props: Props) => {
       toast.success('Product remove');
       localStorage.setItem('eShopCartItems', JSON.stringify(filteredProducts));
     }
+  }, [cartProducts]);
+
+  const handleCartQtyIncrease = useCallback((product: CartProductType) => {
+    let updatedCart;
+
+    if (product.quantity === 99) {
+      return toast.error("Maximum reached");
+    }
+
+    if (cartProducts){
+      updatedCart = [...cartProducts]
+
+      const existingIndex = cartProducts.findIndex((item) =>
+        item.id === product.id
+      );
+
+      if (existingIndex > -1){
+        updatedCart[existingIndex].quantity = ++updatedCart[existingIndex].quantity
+      }
+
+      setCartProducts(updatedCart)
+      localStorage.setItem('eShopCartItems', JSON.stringify(updatedCart))
+    }
+  }, [cartProducts]);
+
+  const handleCartQtyDecrease = useCallback((product: CartProductType) => {
+    let updatedCart;
+
+    if (product.quantity === 1) {
+      return toast.error("Minumum reached");
+    }
+
+    if (cartProducts){
+      updatedCart = [...cartProducts]
+
+      const existingIndex = cartProducts.findIndex((item) =>
+        item.id === product.id
+      );
+
+      if (existingIndex > -1){
+        updatedCart[existingIndex].quantity = --updatedCart[existingIndex].quantity
+      }
+
+      setCartProducts(updatedCart)
+      localStorage.setItem('eShopCartItems', JSON.stringify(updatedCart))
+    }
+  }, [cartProducts]);
+
+  const handleClearCart = useCallback(() => {
+    setCartProducts(null)
+    setCartTotalQty(0)
+    localStorage.setItem('eShopCartItems', JSON.stringify(null));
+
   }, [cartProducts])
 
   const value = {
@@ -59,6 +115,9 @@ export const CartContextProvider = (props: Props) => {
     cartProducts,
     handleAddProductToCart,
     handleRemoveProductFromCart,
+    handleCartQtyIncrease,
+    handleCartQtyDecrease,
+    handleClearCart,
   }
 
   return <CartContext.Provider value={value} {...props}/>;
